@@ -23,7 +23,12 @@ public class MainActivity extends BaseActivity {
         initToolBar();
         initAdmob();
 
-        moveToGame();
+        moveToStart();
+    }
+
+    private void moveToStart() {
+        StartFragment startFragment = new StartFragment();
+        replaceFragment(startFragment, startFragment.getClass().getName());
     }
 
     private void moveToGame() {
@@ -54,7 +59,7 @@ public class MainActivity extends BaseActivity {
 
     private void initAdmob() {
 
-        MobileAds.initialize(this, "ca-app-pub-2063591852610447~1403848680");
+        MobileAds.initialize(this, "ca-app-pub-3940256099942544~3347511713");
 
         mAdView = findViewById(R.id.adView);
         AdRequest adRequest = new AdRequest.Builder().addTestDevice(AdRequest.DEVICE_ID_EMULATOR).build();

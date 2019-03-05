@@ -79,6 +79,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             i.putExtras(b);
         }
         startActivity(i);
+        finish();
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_right);
     }
 

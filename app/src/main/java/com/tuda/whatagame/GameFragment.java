@@ -1,12 +1,16 @@
 package com.tuda.whatagame;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.support.v7.widget.CardView;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -14,6 +18,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.tuda.whatagame.brokenview.AutoBrokenView;
+import com.tuda.whatagame.brokenview.BrokenCallback;
 import com.tuda.whatagame.brokenview.BrokenTouchListener;
 import com.tuda.whatagame.brokenview.BrokenView;
 import com.tuda.whatagame.customview.CircleProgressBar;
@@ -44,14 +49,14 @@ public class GameFragment extends BaseFragment {
     private int mIntResult;
     private CountDownTimer mTimer;
     private int mIntTime;
-    private int mIntQuestion = 1;
+    private int mIntQuestion = 0;
     private int mIntUserPoint;
     private CircleProgressBar mPbTime;
     private AutoBrokenView mAutoWhite;
     private BrokenView mBrokenView;
-    private Paint mWhitePaint;
-    private LinearLayout mLlContentView;
     private Point mPoint;
+    private int mIntPrefQuestion = 0;
+    private Vibrator mVibrator;
 
     @Override
     protected void onBackPressFragment() {
@@ -69,6 +74,16 @@ public class GameFragment extends BaseFragment {
         mRlOption2.setOnClickListener(this);
         mRlOption3.setOnClickListener(this);
         mRlOption4.setOnClickListener(this);
+
+        mBrokenView.setCallback(new BrokenCallback() {
+            @Override
+            public void onCancel(View v) {
+                super.onCancel(v);
+                Log.d(TAG,"onCancel");
+                moveToReplay();
+            }
+        });
+
     }
 
     @Override
@@ -88,12 +103,7 @@ public class GameFragment extends BaseFragment {
 
         mPbTime = view.findViewById(R.id.pb_time);
 
-        mLlContentView = view.findViewById(R.id.ll_content_view);
-
         mBrokenView = BrokenView.add2Window(getActivity());
-
-        mWhitePaint = new Paint();
-        mWhitePaint.setColor(0xffffffff);
 
         view.post(new Runnable() {
             @Override
@@ -107,6 +117,7 @@ public class GameFragment extends BaseFragment {
             }
         });
 
+        mVibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 
     }
 
@@ -117,14 +128,12 @@ public class GameFragment extends BaseFragment {
 
     @Override
     protected void getData() {
+        mIntPrefQuestion = PrefUtil.getSharedPreferenceInt(getActivity(), Constants.USER_QUESTION, 0);
+        mIntUserPoint = PrefUtil.getSharedPreferenceInt(getActivity(), Constants.USER_POINT, 0);
         countDownTimer();
         setRandomQuestion();
-        getUserPoint();
     }
 
-    private void getUserPoint() {
-        mIntUserPoint = PrefUtil.getSharedPreferenceInt(getActivity(), Constants.USER_POINT, 0);
-    }
 
     private void countDownTimer() {
         mTimer = new CountDownTimer(11000, 1000) {
@@ -139,6 +148,11 @@ public class GameFragment extends BaseFragment {
             @Override
             public void onFinish() {
                 Log.d(TAG,"onFinish");
+                mPbTime.stopAnimation();
+                PrefUtil.setSharedPreferenceInt(getActivity(), Constants.USER_POINT, mIntUserPoint);
+
+                mAutoWhite.setAutoBrokenView();
+
             }
         };
         mTimer.start();
@@ -221,28 +235,33 @@ public class GameFragment extends BaseFragment {
 
             setRandomQuestion();
 
-
             mTimer.start();
-
-            if (mIntResult % 5 == 0)
-                mIntUserPoint += 5;
-
-
             mIntQuestion++;
+            mIntPrefQuestion++;
+            if (mIntQuestion % 5 == 0) {
+                mIntUserPoint += 5;
+                PrefUtil.setSharedPreferenceInt(getActivity(), Constants.USER_POINT, mIntUserPoint);
+            }
         } else {
+            if (Build.VERSION.SDK_INT >=26){
+                mVibrator.vibrate(VibrationEffect.createOneShot(500,VibrationEffect.DEFAULT_AMPLITUDE));
+            }else {
+                mVibrator.vibrate(500);
+            }
+
+
+            mAutoWhite.setAutoBrokenView();
             Log.d(TAG, "Oh no");
             mTimer.cancel();
             mPbTime.stopAnimation();
             PrefUtil.setSharedPreferenceInt(getActivity(), Constants.USER_POINT, mIntUserPoint);
 
-            mAutoWhite.setAutoBrokenView();
-//            moveToReplay();
         }
     }
 
     private void moveToReplay() {
-        ReplayFragment replayFragment = new ReplayFragment();
-        replaceFragment(replayFragment,replayFragment.getClass().getName());
+        StartFragment startFragment = new StartFragment();
+        replaceFragment(startFragment,startFragment.getClass().getName());
     }
 
     @Override

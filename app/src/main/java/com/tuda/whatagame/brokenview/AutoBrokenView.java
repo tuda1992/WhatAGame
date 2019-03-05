@@ -3,6 +3,7 @@ package com.tuda.whatagame.brokenview;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Region;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 
@@ -11,6 +12,7 @@ public class AutoBrokenView {
     private BrokenAnimator brokenAnim;
     private BrokenView brokenView;
     private BrokenConfig config;
+    public static View mView;
 
     private AutoBrokenView(Builder builder) {
         brokenView = builder.brokenView;
@@ -85,6 +87,7 @@ public class AutoBrokenView {
         }
 
         public Builder setViewPoint(View v,Point point) {
+            mView = v;
             if(config.region == null || config.region.contains(point.x,point.y)) {
                 brokenAnim = brokenView.getAnimator(v);
                 if (brokenAnim == null)
@@ -101,6 +104,16 @@ public class AutoBrokenView {
 
     public void setAutoBrokenView() {
         brokenAnim.start();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (mView != null){
+                    brokenView.onBrokenCancel(mView);
+                    mView = null;
+                }
+
+            }
+        },2000);
     }
 
 }
